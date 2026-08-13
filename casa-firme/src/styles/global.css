@@ -100,6 +100,7 @@ a { color: var(--primario); }
 .barra-nav a.active { background: var(--primario-suave); color: var(--primario-oscuro); }
 
 .contenido { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 1rem 1rem 3rem; }
+.contenido.angosto { max-width: 480px; }
 
 .pie {
   border-top: 1px solid var(--borde);
@@ -491,6 +492,82 @@ legend { font-size: 0.88rem; font-weight: 600; padding: 0 0 0.3rem; }
 .grande-num { font-size: 1.8rem; font-weight: 700; margin: 0; }
 
 /* ---------------- Impresion ---------------- */
+
+/* ---------------- Entrada (sesión) ---------------- */
+
+.entrada { display: flex; flex-direction: column; gap: 1.5rem; padding-top: 2rem; }
+.entrada-cabeza { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+.entrada-cabeza h1 { font-size: 1.9rem; margin: 0.4rem 0 0; }
+.entrada-cabeza p { color: var(--tinta-tenue); max-width: 32ch; margin: 0; }
+.marca-icono.grande { width: 60px; height: 60px; border-radius: 16px; font-size: 2rem; }
+
+.rol-tarjeta {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 1rem;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rol-tarjeta:hover { border-color: var(--primario); background: var(--primario-suave); }
+.rol-icono { font-size: 1.6rem; line-height: 1; flex: none; }
+.rol-tarjeta strong { display: block; margin-bottom: 0.2rem; }
+
+/* ---------------- Menú de usuario ---------------- */
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px; flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--borde);
+  background: var(--primario-suave);
+  color: var(--primario-oscuro);
+  font: inherit; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer;
+  margin-left: 0.25rem;
+}
+.capa { position: fixed; inset: 0; z-index: 30; }
+.menu {
+  position: absolute;
+  top: 3.6rem; right: 1rem;
+  z-index: 31;
+  min-width: 230px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+.menu-cabeza { padding: 0.8rem 0.9rem; border-bottom: 1px solid var(--borde); }
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: none;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.menu-item:hover { background: var(--superficie-2); }
+.menu-item.peligro { color: var(--peligro); border-top: 1px solid var(--borde); }
+
+/* ---------------- Bolsa de casos ---------------- */
+
+.caso { display: flex; flex-direction: column; gap: 0.4rem; }
+.marca-vulnerable { color: var(--aviso); font-weight: 650; }
+
+select.campo { appearance: none; background-image: none; }
+
+details summary { cursor: pointer; font-weight: 600; }
 
 @media print {
   .barra, .pie, .no-imprimir, .dibujo-lupa { display: none !important; }

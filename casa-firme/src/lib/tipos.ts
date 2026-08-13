@@ -144,6 +144,41 @@ export const ETIQUETA_ESTADO: Record<EstadoVivienda, string> = {
   plan_listo: 'Plan de acción listo',
 }
 
+export type Rol = 'voluntario' | 'profesional'
+
+export const ETIQUETA_ROL: Record<Rol, string> = {
+  voluntario: 'Voluntario en campo',
+  profesional: 'Ingeniero / arquitecto',
+}
+
+/**
+ * Quien esta usando la app en este dispositivo.
+ *
+ * No es autenticacion: la app no tiene servidor y no puede verificar a nadie.
+ * Es una identificacion de equipo, que sirve para firmar el trabajo y para
+ * saber quien tomo cada caso. La verificacion de que alguien es de verdad
+ * ingeniero la hace el coordinador de la brigada, por fuera.
+ */
+export interface Usuario {
+  id: string
+  nombre: string
+  telefono: string
+  rol: Rol
+  municipio: string
+  /** Solo para profesionales. */
+  matricula?: string
+  profesion?: string
+  creadoEn: string
+}
+
+/** Un profesional se asigna a si mismo un caso de la bolsa. */
+export interface Asignacion {
+  profesionalId: string
+  profesionalNombre: string
+  profesionalMatricula?: string
+  tomadaEn: string
+}
+
 export interface Identificacion {
   codigo: string
   municipio: string
@@ -154,6 +189,7 @@ export interface Identificacion {
   responsableTelefono: string
   personas: number
   personasVulnerables: number
+  voluntarioId?: string
   voluntarioNombre: string
   voluntarioTelefono: string
   fecha: string
@@ -185,6 +221,8 @@ export interface Vivienda {
   respuestas: Respuestas
   notas: Record<string, string>
   fotos: Foto[]
+  /** Profesional que tomo el caso. Sin esto, nadie puede firmar la revision. */
+  asignacion?: Asignacion
   /** Ids de secciones que el voluntario ya marco como terminadas. */
   seccionesCompletas: string[]
   revision?: Revision

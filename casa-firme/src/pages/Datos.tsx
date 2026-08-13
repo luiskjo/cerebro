@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useApp } from '../lib/estado'
-import { descargarArchivo, exportarPaquete, importarPaquete, type Paquete } from '../lib/almacenamiento'
+import {
+  borrarFoto,
+  descargarArchivo,
+  exportarPaquete,
+  importarPaquete,
+  type Paquete,
+} from '../lib/almacenamiento'
 
 /**
  * Sincronizacion sin servidor: el voluntario exporta un archivo cuando llega a
@@ -10,6 +16,21 @@ export function Datos() {
   const { viviendas, reemplazarTodo } = useApp()
   const [mensaje, setMensaje] = useState<string>()
   const [trabajando, setTrabajando] = useState(false)
+  const [confirmandoBorrado, setConfirmandoBorrado] = useState(false)
+
+  async function borrarTodo() {
+    setTrabajando(true)
+    try {
+      for (const vivienda of viviendas) {
+        for (const foto of vivienda.fotos) await borrarFoto(foto.clave)
+      }
+      reemplazarTodo([])
+      setConfirmandoBorrado(false)
+      setMensaje('Se borraron todas las viviendas y sus fotos de este dispositivo.')
+    } finally {
+      setTrabajando(false)
+    }
+  }
 
   async function exportar(conFotos: boolean) {
     setTrabajando(true)
@@ -88,6 +109,42 @@ export function Datos() {
           Este archivo lleva nombres, teléfonos y ubicaciones de familias afectadas. Compártelo solo con el
           coordinador de la brigada y no lo publiques en grupos abiertos.
         </p>
+      </section>
+
+      <section className="tarjeta pila">
+        <h2>Borrar todo de este dispositivo</h2>
+        <p className="tenue">
+          Para cuando entregues el teléfono o se lo pases a otra persona. Exporta primero: esto no se
+          puede deshacer.
+        </p>
+        {confirmandoBorrado ? (
+          <>
+            <p className="aviso aviso-peligro">
+              Se van a borrar {viviendas.length} vivienda{viviendas.length === 1 ? '' : 's'} con todas sus
+              fotos. Si no las has exportado, se pierden.
+            </p>
+            <button
+              type="button"
+              className="btn btn-peligro ancho"
+              disabled={trabajando}
+              onClick={() => void borrarTodo()}
+            >
+              Sí, borrar todo
+            </button>
+            <button type="button" className="btn btn-texto" onClick={() => setConfirmandoBorrado(false)}>
+              Cancelar
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-secundario ancho"
+            disabled={viviendas.length === 0}
+            onClick={() => setConfirmandoBorrado(true)}
+          >
+            Borrar todos los datos
+          </button>
+        )}
       </section>
     </div>
   )

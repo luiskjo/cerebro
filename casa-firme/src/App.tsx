@@ -1,5 +1,8 @@
-import { HashRouter, Link, NavLink, Route, Routes } from 'react-router-dom'
-import { ProveedorApp } from './lib/estado'
+import { useState } from 'react'
+import { HashRouter, Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { ProveedorApp, useApp } from './lib/estado'
+import { ETIQUETA_ROL } from './lib/tipos'
+import { Entrar } from './pages/Entrar'
 import { Inicio } from './pages/Inicio'
 import { NuevaVivienda } from './pages/NuevaVivienda'
 import { Evaluacion } from './pages/Evaluacion'
@@ -9,7 +12,115 @@ import { PlanDeAccion } from './pages/PlanDeAccion'
 import { Ayuda } from './pages/Ayuda'
 import { Datos } from './pages/Datos'
 
+function MenuUsuario() {
+  const { usuario, cerrarSesion, viviendas } = useApp()
+  const [abierto, setAbierto] = useState(false)
+  const [confirmando, setConfirmando] = useState(false)
+  const navegar = useNavigate()
+  if (!usuario) return null
+
+  const iniciales = usuario.nombre
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('')
+
+  return (
+    <>
+      <button
+        type="button"
+        className="avatar"
+        onClick={() => setAbierto((a) => !a)}
+        aria-expanded={abierto}
+        aria-label={`Cuenta de ${usuario.nombre}`}
+      >
+        {iniciales || '?'}
+      </button>
+
+      {abierto && (
+        <>
+          <div className="capa" onClick={() => setAbierto(false)} />
+          <div className="menu" role="menu">
+            <div className="menu-cabeza">
+              <strong>{usuario.nombre}</strong>
+              <span className="tenue chico bloque">{ETIQUETA_ROL[usuario.rol]}</span>
+              {usuario.matricula && <span className="tenue chico bloque">M.P. {usuario.matricula}</span>}
+              <span className="tenue chico bloque">{usuario.municipio}</span>
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              className="menu-item"
+              onClick={() => {
+                setAbierto(false)
+                navegar('/datos')
+              }}
+            >
+              Exportar o importar datos
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="menu-item peligro"
+              onClick={() => {
+                setAbierto(false)
+                setConfirmando(true)
+              }}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </>
+      )}
+
+      {confirmando && (
+        <div className="modal" role="dialog" aria-modal="true" onClick={() => setConfirmando(false)}>
+          <div className="modal-contenido pila" onClick={(e) => e.stopPropagation()}>
+            <h2>¿Cerrar sesión?</h2>
+            <p>
+              Las {viviendas.length} vivienda{viviendas.length === 1 ? '' : 's'} que tienes guardadas
+              <strong> se quedan en este dispositivo</strong> y las verá quien entre después.
+            </p>
+            <p className="tenue chico">
+              Si vas a entregar el teléfono o cambiar de persona, exporta tu trabajo primero.
+            </p>
+            <button
+              type="button"
+              className="btn btn-secundario ancho"
+              onClick={() => {
+                setConfirmando(false)
+                navegar('/datos')
+              }}
+            >
+              Exportar antes de salir
+            </button>
+            <button type="button" className="btn btn-peligro ancho" onClick={cerrarSesion}>
+              Cerrar sesión
+            </button>
+            <button type="button" className="btn btn-texto" onClick={() => setConfirmando(false)}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 function Cascaron() {
+  const { usuario } = useApp()
+
+  if (!usuario) {
+    return (
+      <div className="app">
+        <main className="contenido angosto">
+          <Entrar />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <header className="barra">
@@ -17,13 +128,13 @@ function Cascaron() {
           <span className="marca-icono" aria-hidden="true">⌂</span>
           <span>
             <strong>Casa Firme</strong>
-            <small>Evaluación post-sismo</small>
+            <small>{usuario.rol === 'profesional' ? 'Revisión profesional' : 'Evaluación en campo'}</small>
           </span>
         </Link>
         <nav className="barra-nav">
-          <NavLink to="/" end>Viviendas</NavLink>
+          <NavLink to="/" end>{usuario.rol === 'profesional' ? 'Casos' : 'Viviendas'}</NavLink>
           <NavLink to="/ayuda">Ayuda</NavLink>
-          <NavLink to="/datos">Datos</NavLink>
+          <MenuUsuario />
         </nav>
       </header>
 

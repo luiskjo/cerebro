@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useApp } from '../lib/estado'
+import { esMiCaso, estaDisponible, useApp } from '../lib/estado'
 import { calcularDiagnostico } from '../domain/reglas'
 import { CATALOGO, ETIQUETA_PRIORIDAD, ETIQUETA_QUIEN, sugerirReparaciones } from '../domain/reparaciones'
 import { Semaforo } from '../components/Semaforo'
@@ -14,7 +14,7 @@ import { ETIQUETA_HABITABILIDAD } from '../lib/tipos'
 export function Revision() {
   const { id = '' } = useParams()
   const navegar = useNavigate()
-  const { obtener, perfil, guardarRevision, cambiarEstado } = useApp()
+  const { obtener, usuario, guardarRevision, cambiarEstado, tomarCaso, liberarCaso } = useApp()
   const vivienda = obtener(id)
 
   const diagnostico = useMemo(() => (vivienda ? calcularDiagnostico(vivienda.respuestas) : null), [vivienda])
@@ -26,8 +26,8 @@ export function Revision() {
   const [revision, setRevision] = useState<RevisionTipo>(
     () =>
       vivienda?.revision ?? {
-        profesionalNombre: perfil.rol === 'profesional' ? perfil.nombre : '',
-        profesionalMatricula: '',
+        profesionalNombre: usuario?.rol === 'profesional' ? usuario.nombre : '',
+        profesionalMatricula: usuario?.matricula ?? '',
         fecha: new Date().toISOString().slice(0, 10),
         habitabilidadFinal: diagnostico?.habitabilidadSugerida ?? 'amarillo',
         justificacion: '',
@@ -46,7 +46,10 @@ export function Revision() {
     return <p className="vacio">No encontramos esa vivienda. <Link to="/">Volver</Link></p>
   }
 
-  const soloLectura = perfil.rol !== 'profesional'
+  const mio = esMiCaso(vivienda, usuario)
+  const disponible = estaDisponible(vivienda)
+  // Solo edita quien tomó el caso. Así dos profesionales no firman lo mismo.
+  const soloLectura = usuario?.rol !== 'profesional' || !mio || Boolean(vivienda.revision?.firmada)
   const idsSugeridos = new Set(sugeridas.map((r) => r.id))
 
   function alternarReparacion(idRep: string) {
@@ -80,11 +83,41 @@ export function Revision() {
         {vivienda.identificacion.codigo} · {vivienda.identificacion.direccion}
       </p>
 
-      {soloLectura && (
+      {usuario?.rol !== 'profesional' ? (
         <p className="aviso aviso-aviso">
-          Estás en modo voluntario, así que esta pantalla es de solo lectura. Cambia tu rol a "Ingeniero /
-          arquitecto" en el inicio si eres quien revisa.
+          Esta pantalla la llena un ingeniero o arquitecto. Puedes leerla, pero no modificarla.
         </p>
+      ) : vivienda.revision?.firmada ? (
+        <p className="aviso aviso-bien">
+          Revisión firmada por <strong>{vivienda.revision.profesionalNombre}</strong> el{' '}
+          {vivienda.revision.fecha}. Queda como registro y ya no se edita.
+        </p>
+      ) : disponible ? (
+        <div className="tarjeta alerta-aviso pila">
+          <h2>Este caso está libre</h2>
+          <p>
+            Para revisarlo y firmarlo tienes que tomarlo primero. Mientras lo tengas tomado, ningún otro
+            colega lo va a revisar en paralelo.
+          </p>
+          <button type="button" className="btn btn-principal ancho" onClick={() => tomarCaso(id)}>
+            Tomar este caso
+          </button>
+        </div>
+      ) : !mio ? (
+        <p className="aviso aviso-aviso">
+          Este caso lo tomó <strong>{vivienda.asignacion?.profesionalNombre}</strong>. Puedes leerlo, pero
+          para no duplicar trabajo solo esa persona puede firmarlo. Si necesitas asumirlo, pídele que lo
+          libere.
+        </p>
+      ) : (
+        <div className="fila-entre">
+          <p className="aviso aviso-bien" style={{ flex: 1 }}>
+            Tomaste este caso. Es tuyo hasta que lo firmes o lo liberes.
+          </p>
+          <button type="button" className="btn btn-texto peligro" onClick={() => liberarCaso(id)}>
+            Liberar
+          </button>
+        </div>
       )}
 
       <section className="tarjeta pila">

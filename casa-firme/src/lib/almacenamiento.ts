@@ -1,4 +1,4 @@
-import type { Vivienda } from './tipos'
+import type { Usuario, Vivienda } from './tipos'
 
 /**
  * Persistencia local. La app tiene que funcionar sin senal: los datos viven en
@@ -7,16 +7,9 @@ import type { Vivienda } from './tipos'
  */
 
 const CLAVE_VIVIENDAS = 'casafirme.viviendas.v1'
-const CLAVE_PERFIL = 'casafirme.perfil.v1'
+const CLAVE_SESION = 'casafirme.sesion.v1'
 const BD_FOTOS = 'casafirme-fotos'
 const ALMACEN_FOTOS = 'fotos'
-
-export interface Perfil {
-  nombre: string
-  telefono: string
-  rol: 'voluntario' | 'profesional'
-  municipio: string
-}
 
 export function leerViviendas(): Vivienda[] {
   try {
@@ -33,18 +26,29 @@ export function guardarViviendas(viviendas: Vivienda[]): void {
   localStorage.setItem(CLAVE_VIVIENDAS, JSON.stringify(viviendas))
 }
 
-export function leerPerfil(): Perfil {
+/** Devuelve el usuario con sesion abierta en este dispositivo, o null. */
+export function leerSesion(): Usuario | null {
   try {
-    const crudo = localStorage.getItem(CLAVE_PERFIL)
-    if (crudo) return JSON.parse(crudo) as Perfil
+    const crudo = localStorage.getItem(CLAVE_SESION)
+    if (!crudo) return null
+    const usuario = JSON.parse(crudo) as Usuario
+    return usuario?.id && usuario?.nombre ? usuario : null
   } catch {
-    /* perfil corrupto: se devuelve el vacio */
+    return null
   }
-  return { nombre: '', telefono: '', rol: 'voluntario', municipio: '' }
 }
 
-export function guardarPerfil(perfil: Perfil): void {
-  localStorage.setItem(CLAVE_PERFIL, JSON.stringify(perfil))
+export function guardarSesion(usuario: Usuario): void {
+  localStorage.setItem(CLAVE_SESION, JSON.stringify(usuario))
+}
+
+/**
+ * Cierra la sesion. NO borra las viviendas: el trabajo de campo puede no estar
+ * exportado todavia y perderlo seria irreparable. Quien quiera limpiar el
+ * dispositivo lo hace explicitamente desde la pantalla de Datos.
+ */
+export function borrarSesion(): void {
+  localStorage.removeItem(CLAVE_SESION)
 }
 
 /* ------------------------------------------------------------------ */
@@ -157,10 +161,39 @@ export async function importarPaquete(paquete: Paquete, existentes: Vivienda[]):
   const porId = new Map(existentes.map((v) => [v.id, v]))
   for (const entrante of paquete.viviendas ?? []) {
     const actual = porId.get(entrante.id)
-    // Gana la version modificada mas recientemente.
-    if (!actual || entrante.actualizadaEn > actual.actualizadaEn) porId.set(entrante.id, entrante)
+    porId.set(entrante.id, actual ? fusionarVivienda(actual, entrante) : entrante)
   }
   return [...porId.values()]
+}
+
+/**
+ * Fusiona dos versiones de la misma vivienda que viajaron por archivos
+ * distintos.
+ *
+ * Por defecto gana la mas reciente, pero hay dos cosas que no se pueden perder
+ * por llegar tarde:
+ *
+ * - **La asignacion**: si dos profesionales tomaron el mismo caso sin verse,
+ *   gana quien lo tomo primero. Si no, el ultimo en sincronizar le quitaria el
+ *   caso al otro y los dos terminarian revisando lo mismo.
+ * - **Una revision firmada**: es trabajo profesional con responsabilidad
+ *   detras. Nunca la pisa una version sin firmar, asi sea mas nueva.
+ */
+export function fusionarVivienda(a: Vivienda, b: Vivienda): Vivienda {
+  const [viejo, nuevo] = a.actualizadaEn <= b.actualizadaEn ? [a, b] : [b, a]
+  const resultado: Vivienda = { ...nuevo }
+
+  const asignaciones = [a.asignacion, b.asignacion].filter(Boolean) as NonNullable<Vivienda['asignacion']>[]
+  if (asignaciones.length > 0) {
+    resultado.asignacion = asignaciones.reduce((primera, x) => (x.tomadaEn < primera.tomadaEn ? x : primera))
+  }
+
+  if (viejo.revision?.firmada && !nuevo.revision?.firmada) {
+    resultado.revision = viejo.revision
+    resultado.estado = viejo.estado
+  }
+
+  return resultado
 }
 
 export function descargarArchivo(nombre: string, contenido: string, tipo = 'application/json'): void {

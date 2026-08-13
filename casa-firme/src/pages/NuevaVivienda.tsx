@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../lib/estado'
 
 export function NuevaVivienda() {
-  const { crearVivienda, perfil } = useApp()
+  const { crearVivienda, usuario } = useApp()
   const navegar = useNavigate()
   const [datos, setDatos] = useState({
-    municipio: perfil.municipio,
+    municipio: usuario?.municipio ?? '',
     veredaBarrio: '',
     direccion: '',
     responsableNombre: '',

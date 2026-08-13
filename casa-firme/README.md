@@ -24,6 +24,46 @@ madera y teja de barro — la tipología dominante en los municipios pequeños a
 5. **Lista de compras consolidada** para toda la vivienda, con desperdicio incluido y casillas para ir
    marcando.
 
+## Roles y asignación de casos
+
+Al entrar, cada persona dice quién es y con qué rol trabaja. **No es autenticación**: la app no tiene
+servidor y no puede verificar a nadie. El nombre y la matrícula sirven para firmar el trabajo y para
+saber quién tomó cada caso; quien confirma que alguien es de verdad ingeniero es el coordinador de la
+brigada, por fuera de la app. La pantalla de entrada lo dice con esas palabras, para que nadie asuma
+una seguridad que no existe.
+
+**El voluntario** ve solo las viviendas que él evaluó y el botón para empezar una nueva.
+
+**El ingeniero o arquitecto** ve una bolsa de casos y se asigna a sí mismo: no hay un coordinador
+repartiendo trabajo. Tres pestañas:
+
+| Pestaña | Qué muestra |
+|---|---|
+| Disponibles | Evaluaciones enviadas que nadie ha tomado, **ordenadas por gravedad y por número de personas vulnerables** en la casa |
+| Míos | Los que tomó y todavía no ha firmado |
+| Firmados | Los que ya cerró |
+
+Tomar un caso lo saca de la bolsa de los demás. Solo quien lo tomó puede editar y firmar la revisión;
+el resto lo ve en modo lectura. Si no puede atenderlo, lo libera y vuelve a la bolsa. Una revisión
+firmada ya no se libera ni se edita.
+
+### Conflictos al sincronizar
+
+Como la sincronización es por archivo, dos profesionales pueden tomar el mismo caso sin verse. Al
+importar, `fusionarVivienda` resuelve con dos reglas que no dependen del orden de importación:
+
+- **Gana quien tomó el caso primero**, aunque la otra versión sea más reciente. Sin esto, el último en
+  sincronizar le quitaría el caso al otro y ambos revisarían lo mismo.
+- **Una revisión firmada nunca la pisa una versión sin firmar.** Es trabajo profesional con
+  responsabilidad detrás.
+
+Para todo lo demás gana la versión modificada más recientemente. Hay pruebas de cada regla en
+`src/lib/asignacion.test.ts`, incluida la conmutatividad.
+
+> **Límite conocido.** Un profesional solo ve los casos que estén **en su dispositivo**, así que
+> alguien tiene que pasarle el archivo exportado. La bolsa de casos compartida y en tiempo real
+> necesita un servidor; ver «Qué haría falta para el siguiente paso» abajo.
+
 ## Decisiones de diseño
 
 - **Sin servidor y sin conexión.** Todo vive en el dispositivo (`localStorage` para los datos,
@@ -102,6 +142,21 @@ Ver [`docs/INVESTIGACION.md`](docs/INVESTIGACION.md): sistemas constructivos de 
 daño, metodología de evaluación post-sismo, técnicas de reparación, los coeficientes de cantidades que
 usa la app y las fuentes primarias que faltan por contrastar.
 
+## Qué haría falta para el siguiente paso
+
+Lo que hoy resuelve el archivo exportado lo resolvería mejor un backend pequeño. Haría falta si el
+equipo quiere:
+
+- Una **bolsa de casos compartida y en vivo**: que el ingeniero en Bogotá vea la evaluación que el
+  voluntario acaba de terminar en la vereda, sin que nadie le pase un archivo.
+- **Cuentas de verdad**, con verificación de matrícula profesional, para que el rol signifique algo.
+- **Coordinación**: ver quién está trabajando en qué, reasignar, medir avance de la brigada.
+
+Sería un backend chico —autenticación, una tabla de viviendas, almacenamiento de fotos, y la app
+sincronizando contra él en vez de contra un archivo—. Lo que **no** hay que perder al hacerlo es el
+funcionamiento sin conexión: el trabajo se registra en el dispositivo y se sube cuando hay señal,
+nunca al revés.
+
 ## Límites
 
 - Es una herramienta de **evaluación rápida de habitabilidad**. No es una evaluación estructural
@@ -109,4 +164,6 @@ usa la app y las fuentes primarias que faltan por contrastar.
 - Las cantidades de material son estimaciones para presupuestar y comprar. Se verifican en obra.
 - No reemplaza el formato oficial del municipio ni el criterio profesional en sitio.
 - Los datos incluyen información personal de familias afectadas. Ver la advertencia en la pantalla de
-  Datos.
+  Datos, que también permite borrar todo del dispositivo al entregarlo.
+- **No hay autenticación.** Cualquiera puede entrar diciendo que es ingeniero. El control de quién
+  participa lo hace la brigada, no la app.

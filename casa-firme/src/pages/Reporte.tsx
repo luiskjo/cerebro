@@ -9,7 +9,7 @@ import { buscarPregunta } from '../domain/checklist'
 
 export function Reporte() {
   const { id = '' } = useParams()
-  const { obtener, perfil } = useApp()
+  const { obtener, usuario } = useApp()
   const vivienda = obtener(id)
 
   const diagnostico = useMemo(() => (vivienda ? calcularDiagnostico(vivienda.respuestas) : null), [vivienda])
@@ -148,7 +148,7 @@ export function Reporte() {
               de reparación.
             </p>
             <Link to={`/vivienda/${id}/revision`} className="btn btn-principal ancho">
-              {perfil.rol === 'profesional' ? 'Abrir la revisión profesional' : 'Ver la revisión profesional'}
+              {usuario?.rol === 'profesional' ? 'Abrir la revisión profesional' : 'Ver la revisión profesional'}
             </Link>
           </>
         )}
