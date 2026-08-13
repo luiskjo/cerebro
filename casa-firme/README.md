@@ -30,6 +30,8 @@ madera y teja de barro — la tipología dominante en los municipios pequeños a
 - **Sin servidor y sin conexión.** Todo vive en el dispositivo (`localStorage` para los datos,
   `IndexedDB` para las fotos, comprimidas al guardarlas). La sincronización es un archivo `.json` que
   se exporta y se importa. En la zona no hay señal confiable y no hay presupuesto de infraestructura.
+  La app se instala como PWA y precachea todo con un service worker: **basta con abrirla una vez con
+  señal para que después funcione completa sin datos**, incluida la navegación entre pantallas.
 - **Interfaz en español, sin jerga técnica.** El usuario objetivo no sabe de construcción. "Grieta de
   1 a 5 mm" se explica como "entra la uña o el canto de una moneda".
 - **Dibujos vectoriales dentro del código.** Nada de imágenes externas: los dibujos son SVG en React,
@@ -54,6 +56,23 @@ npm run check      # typecheck
 
 Es una aplicación estática: `dist/` se puede publicar en cualquier hosting o servir desde una carpeta.
 Usa rutas de hash, así que no necesita configuración de servidor.
+
+### Despliegue en Vercel
+
+El proyecto vive en un subdirectorio del repositorio, así que en Vercel hay que apuntar el
+**Root Directory** a `casa-firme`. Lo demás lo detecta solo (framework Vite, `npm run build`,
+salida en `dist`); `vercel.json` fija las cabeceras de caché — el service worker **no** se cachea,
+los assets con hash sí, para siempre.
+
+Desde la terminal, con un token de acceso:
+
+```bash
+cd casa-firme
+npx vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+```
+
+Para instalarla en el teléfono: abrir la URL en el navegador y elegir «Agregar a pantalla de inicio».
+Después de esa primera visita con señal, funciona sin datos.
 
 ## Mapa del código
 
