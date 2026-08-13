@@ -7,9 +7,8 @@ Pensado para viviendas de uno y dos pisos en **mampostería (ladrillo o bloque)*
 (tradicional y encementado)**, **tapia/adobe** y combinaciones de estas, con cubiertas de guadua o
 madera y teja de barro — la tipología dominante en los municipios pequeños alrededor de Cali.
 
-> **Proyecto independiente.** No comparte código, dependencias ni configuración con el resto de este
-> repositorio. Todo lo suyo vive dentro de `casa-firme/` y se puede mover a su propio repositorio con
-> un `git mv` sin tocar nada más.
+> **Proyecto independiente.** No comparte código, dependencias ni configuración con ningún otro
+> proyecto. Todo lo suyo vive en esta carpeta y se puede mover completo sin tocar nada más.
 
 ## El flujo
 
@@ -59,10 +58,10 @@ Usa rutas de hash, así que no necesita configuración de servidor.
 
 ### Despliegue en Vercel
 
-El proyecto vive en un subdirectorio del repositorio, así que en Vercel hay que apuntar el
-**Root Directory** a `casa-firme`. Lo demás lo detecta solo (framework Vite, `npm run build`,
-salida en `dist`); `vercel.json` fija las cabeceras de caché — el service worker **no** se cachea,
-los assets con hash sí, para siempre.
+Vercel detecta la configuración solo: framework Vite, `npm run build`, salida en `dist`. El
+`vercel.json` fija lo único que no se puede dejar al azar: **el service worker nunca se cachea** y
+los assets con hash se cachean para siempre. Si el proyecto está en un subdirectorio del
+repositorio, hay que apuntar el **Root Directory** a esa carpeta; si está en la raíz, se deja vacío.
 
 Desde la terminal, con un token de acceso:
 
